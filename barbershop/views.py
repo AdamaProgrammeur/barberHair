@@ -439,18 +439,3 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
-
-
-from django.contrib.auth import get_user_model
-from django.http import HttpResponse
-
-def create_superuser_view(request):
-    User = get_user_model()
-    if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser(
-            username='admin',
-            email='admin@example.com',
-            password='Admin1234'
-        )
-        return HttpResponse("✅ Superuser créé sur Render !")
-    return HttpResponse("⚠️ Superuser déjà existant sur Render !")
