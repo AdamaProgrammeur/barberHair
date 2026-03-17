@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Gestion File{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">Clients en File</h2>
+
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Date entrée</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in files_en_cours %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ f.client }}</td>
+                <td>{{ f.service }}</td>
+                <td>{{ f.date_creation|date:"d M Y H:i" }}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="sortirClient({{ f.id }})">Sortir</button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Aucun client en file</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

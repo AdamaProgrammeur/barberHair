@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Gestion des Services{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <h2 class="mb-4">Gestion des services</h2>
+
+    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#serviceModal">
+        <i class="bi bi-plus-circle"></i> Ajouter un service
+    </button>
+
+    <table class="table table-bordered" id="servicesTable">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Nom</th>
+                <th>Prix</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for service in services %}
+            <tr data-id="{{ service.id }}">
+                <td>
+                    {% if service.image %}
+                        <img src="{{ service.image.url }}" width="60">
+                    {% endif %}
+                </td>
+                <td>{{ service.nom }}</td>
+                <td>{{ service.prix }}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
+                    <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Modal -->
+    <div class="modal fade" id="serviceModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter service</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="serviceForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="service_id">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nom</label>
+                                <input type="text" id="nom" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Prix</label>
+                                <input type="number" id="prix" class="form-control" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Image</label>
+                                <input type="file" id="image" class="form-control">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button class="btn btn-success" id="saveBtn">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const servicesTable = document.querySelector('#servicesTable tbody');
+    const serviceModal = new bootstrap.Modal(document.getElementById('serviceModal'));
+    const saveBtn = document.getElementById('saveBtn');
+
+    function getCSRF(){
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    // Ajouter / Modifier service
+    saveBtn.addEventListener('click', function() {
+        const formData = new FormData();
+        formData.append('service_id', document.getElementById('service_id').value);
+        formData.append('nom', document.getElementById('nom').value);
+        formData.append('prix', document.getElementById('prix').value);
+
+        const image = document.getElementById('image').files[0];
+        if(image){
+            formData.append('image', image);
+        }
+
+        formData.append('csrfmiddlewaretoken', getCSRF());
+
+        fetch("", { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === 'success'){
+                const s = res.service;
+
+                // Création du HTML pour la ligne avec image
+                const imageHTML = s.image ? `<img src="${s.image}" width="60">` : '';
+
+                if(document.getElementById('service_id').value){ // modification
+                    const row = servicesTable.querySelector(`tr[data-id="${s.id}"]`);
+                    row.innerHTML = `
+                        <td>${imageHTML}</td>
+                        <td>${s.nom}</td>
+                        <td>${s.prix}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
+                        </td>`;
+                } else { // ajout
+                    const row = document.createElement('tr');
+                    row.setAttribute('data-id', s.id);
+                    row.innerHTML = `
+                        <td>${imageHTML}</td>
+                        <td>${s.nom}</td>
+                        <td>${s.prix}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
+                        </td>`;
+                    servicesTable.appendChild(row);
+                }
+
+                serviceModal.hide();
+                document.getElementById('serviceForm').reset();
+                document.getElementById('service_id').value = '';
+            }
+        });
+    });
+
+    // Édition / Suppression
+    servicesTable.addEventListener('click', function(e) {
+
+        if(e.target.closest('.editBtn')){
+            const row = e.target.closest('tr');
+            document.getElementById('service_id').value = row.dataset.id;
+            document.getElementById('nom').value = row.children[1].textContent;
+            document.getElementById('prix').value = row.children[2].textContent;
+            serviceModal.show();
+        }
+
+        if(e.target.closest('.deleteBtn')){
+            const row = e.target.closest('tr');
+            const id = row.dataset.id;
+            if(confirm("Voulez-vous vraiment supprimer ce service ?")){
+                fetch("", {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRF()
+                    },
+                    body: JSON.stringify({service_id: id})
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if(res.status === 'deleted'){
+                        row.remove();
+                    } else {
+                        alert('Erreur lors de la suppression !');
+                    }
+                });
+            }
+        }
+
+    });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% block title %}Paramètres du Salon{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Paramètres du Salon</h2>
+
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+
+    <div class="card shadow-sm p-4">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="row g-3">
+                <!-- Nom Salon -->
+                <div class="col-md-6">
+                    <label class="form-label"><i class="bi bi-shop"></i> Nom du Salon</label>
+                    <input type="text" name="nom_salon" class="form-control" value="{{ form.nom_salon.value|default_if_none:'' }}" required>
+                </div>
+
+                <!-- Téléphone -->
+                <div class="col-md-6">
+                    <label class="form-label"><i class="bi bi-telephone"></i> Téléphone</label>
+                    <input type="text" name="telephone" class="form-control" value="{{ form.telephone.value|default_if_none:'' }}">
+                </div>
+
+                <!-- Email -->
+                <div class="col-md-6">
+                    <label class="form-label"><i class="bi bi-envelope"></i> Email</label>
+                    <input type="email" name="email" class="form-control" value="{{ form.email.value|default_if_none:'' }}">
+                </div>
+
+                <!-- Adresse -->
+                <div class="col-md-6">
+                    <label class="form-label"><i class="bi bi-geo-alt"></i> Adresse</label>
+                    <input type="text" name="adresse" class="form-control" value="{{ form.adresse.value|default_if_none:'' }}">
+                </div>
+
+                <!-- Heures d'ouverture -->
+                <div class="col-md-6">
+                    <label class="form-label"><i class="bi bi-clock"></i> Heures d'ouverture</label>
+                    <input type="text" name="heures_ouverture" class="form-control" value="{{ form.heures_ouverture.value|default_if_none:'' }}" placeholder="Ex: 08:00 - 20:00">
+                </div>
+
+                <!-- Couleur du thème -->
+                <div class="col-md-6">
+                    <label class="form-label"><i class="bi bi-palette"></i> Couleur du thème</label>
+                    <input type="color" name="couleur_theme" class="form-control form-control-color" value="{{ form.couleur_theme.value|default_if_none:'#0d6efd' }}">
+                </div>
+
+                <!-- Description -->
+                <div class="col-12">
+                    <label class="form-label"><i class="bi bi-card-text"></i> Description</label>
+                    <textarea name="description" class="form-control" rows="3">{{ form.description.value|default_if_none:'' }}</textarea>
+                </div>
+
+                <!-- Logo -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label"><i class="bi bi-image"></i> Logo</label>
+                    <input type="file" name="logo" class="form-control">
+                    {% if form.logo.value %}
+                        <img src="{{ form.logo.value.url }}" class="img-thumbnail mt-2" style="max-width: 150px;">
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-save"></i> Enregistrer
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<style>
+.card input, .card textarea {
+    border-radius: 0.5rem;
+}
+.card label {
+    font-weight: 600;
+}
+</style>
+{% endblock %}

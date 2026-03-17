@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Gestion File d'Attente{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <h2 class="mb-4">Gestion des Files d'Attente</h2>
+
+    <!-- Messages Django -->
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+
+    <!-- Bouton Ajouter Client en File -->
+    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#modalAjouterFile">
+        <i class="bi bi-plus-circle"></i> Ajouter un client en file
+    </button>
+
+    <!-- Tableau -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover" id="tableFiles">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Date</th>
+                    <th>Actions</th> <!-- juste Actions, plus de Status -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in files|dictsort:"date_creation" %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ f.client }}</td>
+                    <td>{{ f.service }}</td>
+                    <td>{{ f.date_creation|date:"Y-m-d H:i" }}</td>
+                    <td class="d-flex gap-1">
+                        <!-- Modifier -->
+                        <button class="btn btn-sm btn-warning edit-btn" 
+                                data-id="{{ f.id }}" 
+                                data-client="{{ f.client.id }}" 
+                                data-service="{{ f.service.id }}"
+                                {% if f.status != 'en_file' %}disabled{% endif %}>
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Aucun client en file pour le moment</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Ajouter/Modifier File -->
+<div class="modal fade" id="modalAjouterFile" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-card-list"></i> Ajouter / Modifier une file</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="fileForm" method="post" action="{% url 'file_attente_crud' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="clientSelect" class="form-label"><i class="bi bi-person"></i> Client</label>
+            <select class="form-select" id="clientSelect" name="client" required>
+                <option value="">Choisir un client</option>
+                {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.nom }} {{ client.prenom }}</option>
+                {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-scissors"></i> Services</label>
+            <div class="row" id="servicesCards">
+                {% for service in services %}
+                <div class="col-md-4 mb-3 service-item">
+                    <div class="card service-card" data-id="{{ service.id }}">
+                        {% if service.image %}
+                        <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.nom }}">
+                        {% else %}
+                        <div class="text-center py-5"><i class="bi bi-card-image" style="font-size: 2rem;"></i></div>
+                        {% endif %}
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ service.nom }}</h5>
+                            <p class="card-text"><i class="bi bi-currency-dollar"></i> {{ service.prix }} FCFA</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+          </div>
+
+          <input type="hidden" name="service" id="selectedServiceId">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Enregistrer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const selectedServiceId = document.getElementById('selectedServiceId');
+const servicesCardsContainer = document.getElementById('servicesCards');
+
+// Sélection service
+servicesCardsContainer.addEventListener('click', function(e){
+    const card = e.target.closest('.service-card');
+    if(card){
+        document.querySelectorAll('.service-card').forEach(c => c.classList.remove('border-primary','border-3'));
+        card.classList.add('border-primary','border-3');
+        selectedServiceId.value = card.dataset.id;
+    }
+});
+
+// Modal modifier file
+document.addEventListener('click', function(e){
+    if(e.target.closest('.edit-btn')){
+        const btn = e.target.closest('.edit-btn');
+        const fileId = btn.dataset.id;
+        const clientId = btn.dataset.client;
+        const serviceId = btn.dataset.service;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalAjouterFile'));
+        modal.show();
+
+        document.getElementById('clientSelect').value = clientId;
+        selectedServiceId.value = serviceId;
+
+        document.querySelectorAll('.service-card').forEach(c => c.classList.remove('border-primary','border-3'));
+        const selectedCard = document.querySelector(`.service-card[data-id='${serviceId}']`);
+        if(selectedCard) selectedCard.classList.add('border-primary','border-3');
+
+        // hidden file_id
+        let input = document.getElementById('fileIdInput');
+        if(!input){
+            input = document.createElement('input');
+            input.type = "hidden";
+            input.name = "file_id";
+            input.id = "fileIdInput";
+            document.getElementById('fileForm').appendChild(input);
+        }
+        input.value = fileId;
+    }
+});
+</script>
+{% endblock %}

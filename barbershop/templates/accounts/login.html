@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion - SalonBarber</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #6c5ce7, #00b894);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 1rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.25);
+            text-align: center;
+        }
+
+        .login-card .logo {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #6c5ce7;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-card .card-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: #6c5ce7;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            padding: 12px 15px;
+            border-radius: 0.5rem;
+            border: 1px solid #ccc;
+        }
+
+        .form-control:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            font-weight: 600;
+            color: #fff;
+            background-color: #6c5ce7;
+            border: none;
+            border-radius: 0.5rem;
+            transition: background 0.3s;
+        }
+
+        .btn-login:hover {
+            background-color: #5941c7;
+        }
+
+        .alert {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 576px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .card-title {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <!-- Logo dynamique -->
+    <img src="{% if salon and salon.logo %}{{ salon.logo.url }}{% else %}{% static 'logos/default_logo.png' %}{% endif %}" 
+         alt="Logo Salon" class="logo">
+
+    <h3 class="card-title">Se connecter</h3>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="username" class="form-label">Nom d'utilisateur</label>
+            <input type="text" id="username" name="username" class="form-control" placeholder="Votre nom d'utilisateur" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password" class="form-label">Mot de passe</label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="Votre mot de passe" required>
+        </div>
+
+        <button type="submit" class="btn-login mt-3">Se connecter</button>
+    </form>
+
+    <p class="mt-4 text-muted small">© 2026 SalonBarber</p>
+</div>
+
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

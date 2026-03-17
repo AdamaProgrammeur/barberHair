@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Validation Paiement{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <h2 class="mb-4">
+        <i class="bi bi-cash-coin"></i> Validation des Paiements
+    </h2>
+
+    <!-- Messages Django -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if files_en_file %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Prix</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in files_en_file %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ f.client.nom }} {{ f.client.prenom }}</td>
+                    <td>{{ f.service.nom }}</td>
+                    <td><strong>{{ f.service.prix }} FCFA</strong></td>
+                    <td>
+                        <form method="post" action="{% url 'paiements_crud' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="file_id" value="{{ f.id }}">
+                            <input type="hidden" name="client_id" value="{{ f.client.id }}">
+                            <input type="hidden" name="service_id" value="{{ f.service.id }}">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check-circle"></i> Valider paiement
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        Aucun client en attente de paiement
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

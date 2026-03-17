@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Dashboard Salon</h2>
+
+    <!-- Cartes statistiques -->
+    <div class="row g-3">
+        <!-- Total Clients -->
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-primary bg-gradient shadow hover-scale">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <i class="bi bi-people-fill display-4 me-3"></i>
+                    <div class="text-center">
+                        <h6>Total Clients</h6>
+                        <h3>{{ total_clients }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients en File -->
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-warning bg-gradient shadow hover-scale">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <i class="bi bi-person-lines-fill display-4 me-3"></i>
+                    <div class="text-center">
+                        <h6>En File</h6>
+                        <h3>{{ total_files }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paiements aujourd'hui : nombre -->
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-success bg-gradient shadow hover-scale">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <i class="bi bi-currency-dollar display-4 me-3"></i>
+                    <div class="text-center">
+                        <h6>Payés Aujourd'hui</h6>
+                        <h3>{{ total_paiements_today_count }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paiements aujourd'hui : somme -->
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-info bg-gradient shadow hover-scale">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <i class="bi bi-wallet2 display-4 me-3"></i>
+                    <div class="text-center">
+                        <h6>Montant Aujourd'hui</h6>
+                        <h3>{{ total_paiements_today_somme }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Somme totale des paiements -->
+        <div class="col-12 col-md-3 mt-3">
+            <div class="card text-white bg-secondary bg-gradient shadow hover-scale">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <i class="bi bi-bank2 display-4 me-3"></i>
+                    <div class="text-center">
+                        <h6>Total Paiements</h6>
+                        <h3>{{ total_paiements_somme }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row mt-5 g-4">
+        <div class="col-12 col-lg-6">
+            <h5 class="mb-3">Paiements des 7 derniers jours</h5>
+            <div class="card shadow-sm p-3">
+                <canvas id="paiementsChart" style="height:300px;"></canvas>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <h5 class="mb-3">Clients en file - dernière semaine</h5>
+            <div class="card shadow-sm p-3">
+                <canvas id="filesChart" style="height:300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dernières Files et Paiements -->
+    <div class="row mt-5 g-4">
+        <div class="col-12 col-lg-6">
+            <h5>Dernières Files</h5>
+            <ul class="list-group shadow-sm">
+                {% for f in recent_files %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ f.client }} - {{ f.service }}
+                    <span class="badge bg-warning text-dark rounded-pill">{{ f.date_creation|date:"d M H:i" }}</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">Aucune file</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-12 col-lg-6">
+            <h5>Derniers Paiements</h5>
+            <ul class="list-group shadow-sm">
+                {% for p in recent_paiements %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ p.file.client }} - {{ p.file.service }}
+                    <span class="badge bg-success rounded-pill">{{ p.montant }} FCFA</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">Aucun paiement</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Création des graphiques Chart.js avec références pour mise à jour
+const paiementsCtx = document.getElementById('paiementsChart').getContext('2d');
+const paiementsChart = new Chart(paiementsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ paiements_last7days_labels|safe }},
+        datasets: [{
+            label: 'Montant Paiements',
+            data: {{ paiements_last7days_data|safe }},
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+const filesCtx = document.getElementById('filesChart').getContext('2d');
+const filesChart = new Chart(filesCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ files_last7days_labels|safe }},
+        datasets: [{
+            label: 'Clients en File',
+            data: {{ files_last7days_data|safe }},
+            backgroundColor: 'rgba(255, 206, 86, 0.7)',
+            borderColor: 'rgba(255, 206, 86, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Fonction pour mettre à jour dynamiquement le dashboard
+function updateDashboardCharts(newPaiementsLabels, newPaiementsData, newFilesLabels, newFilesData) {
+    // Mettre à jour le graphique paiements
+    paiementsChart.data.labels = newPaiementsLabels;
+    paiementsChart.data.datasets[0].data = newPaiementsData;
+    paiementsChart.update();
+
+    // Mettre à jour le graphique files
+    filesChart.data.labels = newFilesLabels;
+    filesChart.data.datasets[0].data = newFilesData;
+    filesChart.update();
+}
+</script>
+
+<style>
+.hover-scale:hover {
+    transform: scale(1.05);
+    transition: 0.3s;
+}
+.card h6 {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.card h3 {
+    font-weight: bold;
+    font-size: 1.6rem;
+}
+</style>
+
+{% endblock %}  
