@@ -60,10 +60,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'barber_project.wsgi.application'
 
-# Base de données
-DATABASES = {
-    'default': dj_database_url.config()
-}
+import os
+import dj_database_url
+
+if os.environ.get('DATABASE_URL'):
+    # Utilise PostgreSQL si DATABASE_URL est défini
+    DATABASES = {
+        'default': dj_database_url.config()
+    }
+else:
+    # Sinon, utilise SQLite local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 if not DATABASES['default']:
     raise Exception("⚠️ DATABASE_URL not set or invalid!")
 
