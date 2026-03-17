@@ -14,7 +14,7 @@ urlpatterns = [
     path('settings/', views.settings_salon, name='settings_salon'),
 
     # Authentification
-    path('', views.login_view, name='login'),
+    path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
 
     ]
