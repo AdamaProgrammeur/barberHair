@@ -14,6 +14,19 @@ class ClientForm(forms.ModelForm):
             'adresse': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Votre adresse', 'required': True}),
         }
 
+    
+    def clean_telephone(self):
+        telephone = self.cleaned_data['telephone']
+        qs = Client.objects.filter(telephone=telephone)
+        
+        # Si modification, on exclut l'instance actuelle
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        
+        if qs.exists():
+            raise forms.ValidationError("Un client avec ce numéro existe déjà !")
+        return telephone
+
 from django import forms
 from .models import SalonSettings
 

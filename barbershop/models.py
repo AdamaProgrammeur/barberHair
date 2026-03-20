@@ -17,7 +17,7 @@ class Client(models.Model):
 
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
-    telephone = models.CharField(max_length=20)
+    telephone = models.CharField(max_length=20, unique=True)
     adresse = models.CharField(max_length=200, blank=True, null=True)
     date_inscription = models.DateTimeField(default=timezone.now)
 
