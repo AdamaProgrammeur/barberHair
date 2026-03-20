@@ -6,7 +6,7 @@
     <h2 class="mb-4">Gestion des clients</h2>
 
     <!-- Bouton Ajouter client -->
-    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#clientModal">
+    <button class="btn btn-success mb-3" id="addClientBtn">
         <i class="bi bi-plus-circle"></i> Ajouter un client
     </button>
 
@@ -71,7 +71,8 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-success" id="saveBtn"><i class="bi bi-save"></i> Enregistrer</button>
+            <!-- Changement ici : type="button" pour fermer correctement le modal -->
+            <button type="button" class="btn btn-success" id="saveBtn"><i class="bi bi-save"></i> Enregistrer</button>
           </div>
         </div>
       </div>
@@ -88,9 +89,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const clientsTable = document.getElementById('clientsTable').querySelector('tbody');
     const clientForm = document.getElementById('clientForm');
-    const clientModal = new bootstrap.Modal(document.getElementById('clientModal'));
+    const clientModalEl = document.getElementById('clientModal');
+    const clientModal = new bootstrap.Modal(clientModalEl, {backdrop: 'static'});
     const saveBtn = document.getElementById('saveBtn');
     const toastContainer = document.getElementById('toastContainer');
+    const modalTitle = document.getElementById('clientModalLabel');
+    const addClientBtn = document.getElementById('addClientBtn');
 
     function getCSRFToken() {
         return document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -114,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
         bsToast._element.addEventListener('hidden.bs.toast', ()=>toastEl.remove());
     }
 
-    // Soumettre formulaire POST
+    // Fonction pour soumettre le formulaire
     function submitForm(e){
         e.preventDefault();
         const clientId = document.getElementById('client_id').value;
@@ -165,6 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 clientForm.reset();
                 document.getElementById('client_id').value = '';
+                modalTitle.textContent = "Ajouter un client"; // reset titre
                 clientModal.hide();
             } else {
                 showToast("Erreur : " + JSON.stringify(res.errors), 'danger');
@@ -172,7 +177,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Bouton Enregistrer
     saveBtn.addEventListener('click', submitForm);
+
+    // Bouton Ajouter client : ouvre modal vide
+    addClientBtn.addEventListener('click', () => {
+        clientForm.reset();
+        document.getElementById('client_id').value = '';
+        modalTitle.textContent = "Ajouter un client";
+        clientModal.show();
+    });
 
     // Édition / Suppression
     clientsTable.addEventListener('click', function(e){
@@ -183,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('prenom').value = row.children[1].textContent;
             document.getElementById('telephone').value = row.children[2].textContent;
             document.getElementById('adresse').value = row.children[3].textContent;
+            modalTitle.textContent = "Modifier un client"; // titre dynamique
             clientModal.show();
         }
 

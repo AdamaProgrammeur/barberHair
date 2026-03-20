@@ -76,15 +76,37 @@
 
 </div>
 
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
     const servicesTable = document.querySelector('#servicesTable tbody');
-    const serviceModal = new bootstrap.Modal(document.getElementById('serviceModal'));
+    const serviceModalEl = document.getElementById('serviceModal');
+    const serviceModal = new bootstrap.Modal(serviceModalEl, {backdrop:'static'});
     const saveBtn = document.getElementById('saveBtn');
+    const addServiceBtn = document.getElementById('addServiceBtn');
+    const modalTitle = document.getElementById('serviceModalTitle');
+    const toastContainer = document.getElementById('toastContainer');
 
     function getCSRF(){
         return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function showToast(message, type='success'){
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+        toastEl.setAttribute('role','alert');
+        toastEl.setAttribute('aria-live','assertive');
+        toastEl.setAttribute('aria-atomic','true');
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>`;
+        toastContainer.appendChild(toastEl);
+        const bsToast = new bootstrap.Toast(toastEl, {delay:3000});
+        bsToast.show();
+        bsToast._element.addEventListener('hidden.bs.toast', ()=>toastEl.remove());
     }
 
     // Ajouter / Modifier service
@@ -106,8 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(res => {
             if(res.status === 'success'){
                 const s = res.service;
-
-                // Création du HTML pour la ligne avec image
                 const imageHTML = s.image ? `<img src="${s.image}" width="60">` : '';
 
                 if(document.getElementById('service_id').value){ // modification
@@ -120,6 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
                             <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
                         </td>`;
+                    showToast("Service modifié avec succès !");
                 } else { // ajout
                     const row = document.createElement('tr');
                     row.setAttribute('data-id', s.id);
@@ -132,23 +153,43 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
                         </td>`;
                     servicesTable.appendChild(row);
+                    showToast("Service ajouté avec succès !");
                 }
 
+                // Fermer automatiquement le modal
                 serviceModal.hide();
+
+                // Reset formulaire
                 document.getElementById('serviceForm').reset();
                 document.getElementById('service_id').value = '';
+                modalTitle.textContent = "Ajouter service";
+
+                // Afficher le JSON pour debug
+                console.log({status:'success', service: s});
+
+            } else {
+                showToast("Erreur lors de l'enregistrement !", 'danger');
+                console.log(res);
             }
         });
     });
 
+    // Ouvrir modal vide pour ajouter
+    addServiceBtn.addEventListener('click', () => {
+        document.getElementById('serviceForm').reset();
+        document.getElementById('service_id').value = '';
+        modalTitle.textContent = "Ajouter service";
+        serviceModal.show();
+    });
+
     // Édition / Suppression
     servicesTable.addEventListener('click', function(e) {
-
         if(e.target.closest('.editBtn')){
             const row = e.target.closest('tr');
             document.getElementById('service_id').value = row.dataset.id;
             document.getElementById('nom').value = row.children[1].textContent;
             document.getElementById('prix').value = row.children[2].textContent;
+            modalTitle.textContent = "Modifier service";
             serviceModal.show();
         }
 
@@ -158,23 +199,20 @@ document.addEventListener('DOMContentLoaded', function() {
             if(confirm("Voulez-vous vraiment supprimer ce service ?")){
                 fetch("", {
                     method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCSRF()
-                    },
+                    headers: {'Content-Type': 'application/json','X-CSRFToken': getCSRF()},
                     body: JSON.stringify({service_id: id})
                 })
                 .then(res => res.json())
                 .then(res => {
                     if(res.status === 'deleted'){
                         row.remove();
+                        showToast("Service supprimé !");
                     } else {
-                        alert('Erreur lors de la suppression !');
+                        showToast("Erreur lors de la suppression !", 'danger');
                     }
                 });
             }
         }
-
     });
 
 });
