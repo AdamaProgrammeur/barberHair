@@ -1,17 +1,16 @@
+<!-- templates/clients_crud.html -->
 {% extends "base.html" %}
-{% block title %}Gestion des Clients{% endblock %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-4">Gestion des clients</h2>
+    <h2>Gestion des Clients</h2>
 
-    <!-- Bouton Ajouter client -->
-    <button class="btn btn-success mb-3" id="addClientBtn">
-        <i class="bi bi-plus-circle"></i> Ajouter un client
-    </button>
+    <!-- Bouton Ajouter Client -->
+    <button class="btn btn-primary mb-3" id="btnAddClient">Ajouter Client</button>
 
-    <!-- Table liste clients -->
-    <table class="table table-bordered" id="clientsTable">
+    <!-- Tableau Clients -->
+    <table class="table table-bordered">
         <thead>
             <tr>
                 <th>Nom</th>
@@ -21,209 +20,122 @@
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="clientsTable">
             {% for client in clients %}
-            <tr data-id="{{ client.id }}">
+            <tr id="client-{{ client.id }}">
                 <td>{{ client.nom }}</td>
                 <td>{{ client.prenom }}</td>
                 <td>{{ client.telephone }}</td>
                 <td>{{ client.adresse }}</td>
                 <td>
-                    <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
-                    <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
+                    <button class="btn btn-sm btn-info btnEdit" data-id="{{ client.id }}">Modifier</button>
+                    <button class="btn btn-sm btn-danger btnDelete" data-id="{{ client.id }}">Supprimer</button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-
-    <!-- Modal Ajouter / Modifier -->
-    <div class="modal fade" id="clientModal" tabindex="-1" aria-labelledby="clientModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="clientModalLabel">Ajouter un client</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form id="clientForm">
-              {% csrf_token %}
-              <input type="hidden" id="client_id">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label for="nom" class="form-label">Nom</label>
-                  <input type="text" class="form-control" id="nom" placeholder="Nom" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="prenom" class="form-label">Prénom</label>
-                  <input type="text" class="form-control" id="prenom" placeholder="Prénom" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="telephone" class="form-label">Téléphone</label>
-                  <input type="text" class="form-control" id="telephone" placeholder="Téléphone" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="adresse" class="form-label">Adresse</label>
-                  <input type="text" class="form-control" id="adresse" placeholder="Adresse" required>
-                </div>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <!-- Changement ici : type="button" pour fermer correctement le modal -->
-            <button type="button" class="btn btn-success" id="saveBtn"><i class="bi bi-save"></i> Enregistrer</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notifications -->
-    <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<!-- Modal Formulaire Client -->
+<div class="modal fade" id="clientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="clientForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Ajouter Client</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" name="client_id" id="client_id">
+            <div class="mb-3">
+                <label>Nom</label>
+                <input type="text" name="nom" id="nom" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label>Prénom</label>
+                <input type="text" name="prenom" id="prenom" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label>Téléphone</label>
+                <input type="text" name="telephone" id="telephone" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label>Adresse</label>
+                <input type="text" name="adresse" id="adresse" class="form-control">
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success" id="btnSave">Enregistrer</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function(){
 
-    const clientsTable = document.getElementById('clientsTable').querySelector('tbody');
-    const clientForm = document.getElementById('clientForm');
-    const clientModalEl = document.getElementById('clientModal');
-    const clientModal = new bootstrap.Modal(clientModalEl, {backdrop: 'static'});
-    const saveBtn = document.getElementById('saveBtn');
-    const toastContainer = document.getElementById('toastContainer');
-    const modalTitle = document.getElementById('clientModalLabel');
-    const addClientBtn = document.getElementById('addClientBtn');
+    const clientModal = new bootstrap.Modal(document.getElementById('clientModal'));
+    const form = document.getElementById("clientForm");
 
-    function getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
-
-    // Fonction pour afficher notification
-    function showToast(message, type='success'){
-        const toastEl = document.createElement('div');
-        toastEl.className = `toast align-items-center text-bg-${type} border-0`;
-        toastEl.setAttribute('role','alert');
-        toastEl.setAttribute('aria-live','assertive');
-        toastEl.setAttribute('aria-atomic','true');
-        toastEl.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>`;
-        toastContainer.appendChild(toastEl);
-        const bsToast = new bootstrap.Toast(toastEl, {delay:3000});
-        bsToast.show();
-        bsToast._element.addEventListener('hidden.bs.toast', ()=>toastEl.remove());
-    }
-
-    // Fonction pour soumettre le formulaire
-    function submitForm(e){
-        e.preventDefault();
-        const clientId = document.getElementById('client_id').value;
-        const data = {
-            client_id: clientId,
-            nom: document.getElementById('nom').value,
-            prenom: document.getElementById('prenom').value,
-            telephone: document.getElementById('telephone').value,
-            adresse: document.getElementById('adresse').value,
-            csrfmiddlewaretoken: getCSRFToken()
-        };
-
-        fetch("", {
-            method: "POST",
-            headers: {'X-Requested-With': 'XMLHttpRequest'},
-            body: new URLSearchParams(data)
-        })
-        .then(res=>res.json())
-        .then(res=>{
-            if(res.status === 'success'){
-                const c = res.client;
-                if(clientId){
-                    const row = clientsTable.querySelector(`tr[data-id="${c.id}"]`);
-                    row.innerHTML = `
-                        <td>${c.nom}</td>
-                        <td>${c.prenom}</td>
-                        <td>${c.telephone}</td>
-                        <td>${c.adresse}</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
-                        </td>`;
-                    showToast("Client modifié !");
-                } else {
-                    const row = document.createElement('tr');
-                    row.setAttribute('data-id', c.id);
-                    row.innerHTML = `
-                        <td>${c.nom}</td>
-                        <td>${c.prenom}</td>
-                        <td>${c.telephone}</td>
-                        <td>${c.adresse}</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
-                        </td>`;
-                    clientsTable.appendChild(row);
-                    showToast("Client ajouté !");
-                }
-                clientForm.reset();
-                document.getElementById('client_id').value = '';
-                modalTitle.textContent = "Ajouter un client"; // reset titre
-                clientModal.hide();
-            } else {
-                showToast("Erreur : " + JSON.stringify(res.errors), 'danger');
-            }
-        });
-    }
-
-    // Bouton Enregistrer
-    saveBtn.addEventListener('click', submitForm);
-
-    // Bouton Ajouter client : ouvre modal vide
-    addClientBtn.addEventListener('click', () => {
-        clientForm.reset();
-        document.getElementById('client_id').value = '';
-        modalTitle.textContent = "Ajouter un client";
+    // Ajouter client
+    document.getElementById("btnAddClient").addEventListener("click", function(){
+        document.getElementById("modalTitle").innerText = "Ajouter Client";
+        form.reset();
+        document.getElementById("client_id").value = "";
         clientModal.show();
     });
 
-    // Édition / Suppression
-    clientsTable.addEventListener('click', function(e){
-        if(e.target.closest('.editBtn')){
-            const row = e.target.closest('tr');
-            document.getElementById('client_id').value = row.dataset.id;
-            document.getElementById('nom').value = row.children[0].textContent;
-            document.getElementById('prenom').value = row.children[1].textContent;
-            document.getElementById('telephone').value = row.children[2].textContent;
-            document.getElementById('adresse').value = row.children[3].textContent;
-            modalTitle.textContent = "Modifier un client"; // titre dynamique
+    // Modifier client
+    document.querySelectorAll(".btnEdit").forEach(btn=>{
+        btn.addEventListener("click", function(){
+            const tr = this.closest("tr");
+            const clientId = this.dataset.id;
+            document.getElementById("modalTitle").innerText = "Modifier Client";
+            document.getElementById("client_id").value = clientId;
+            document.getElementById("nom").value = tr.children[0].innerText;
+            document.getElementById("prenom").value = tr.children[1].innerText;
+            document.getElementById("telephone").value = tr.children[2].innerText;
+            document.getElementById("adresse").value = tr.children[3].innerText;
             clientModal.show();
-        }
+        });
+    });
 
-        if(e.target.closest('.deleteBtn')){
-            if(confirm("Voulez-vous vraiment supprimer ce client ?")){
-                const row = e.target.closest('tr');
-                const clientId = row.dataset.id;
-                fetch("", {
-                    method: "DELETE",
-                    headers: {
-                        'Content-Type':'application/json',
-                        'X-CSRFToken': getCSRFToken()
-                    },
-                    body: JSON.stringify({client_id: clientId})
-                })
-                .then(res=>res.json())
-                .then(res=>{
-                    if(res.status === 'deleted'){
-                        row.remove();
-                        showToast("Client supprimé !");
-                    } else {
-                        showToast("Erreur lors de la suppression !", 'danger');
-                    }
-                });
+    // Supprimer client
+    document.querySelectorAll(".btnDelete").forEach(btn=>{
+        btn.addEventListener("click", function(){
+            if(!confirm("Voulez-vous vraiment supprimer ce client ?")) return;
+            const clientId = this.dataset.id;
+            fetch("{% url 'clients_crud' %}", {
+                method: "DELETE",
+                headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+                body: JSON.stringify({client_id: clientId})
+            }).then(res=>res.json()).then(data=>{
+                if(data.status==="deleted"){
+                    document.getElementById("client-"+clientId).remove();
+                    alert("Client supprimé !");
+                }
+            });
+        });
+    });
+
+    // Soumettre formulaire AJAX
+    form.addEventListener("submit", function(e){
+        e.preventDefault();
+        const formData = new FormData(form);
+        fetch("{% url 'clients_crud' %}", {
+            method: "POST",
+            body: formData,
+        }).then(res=>res.json()).then(data=>{
+            if(data.status==="success"){
+                location.reload(); // recharge la page pour simplifier
+            }else{
+                alert("Erreur: "+JSON.stringify(data.errors));
             }
-        }
+        });
     });
 
 });

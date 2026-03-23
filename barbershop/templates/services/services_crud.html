@@ -6,10 +6,12 @@
 
     <h2 class="mb-4">Gestion des services</h2>
 
-    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#serviceModal">
+    <!-- Bouton Ajouter -->
+    <button id="addServiceBtn" class="btn btn-success mb-3">
         <i class="bi bi-plus-circle"></i> Ajouter un service
     </button>
 
+    <!-- Table des services -->
     <table class="table table-bordered" id="servicesTable">
         <thead>
             <tr>
@@ -43,7 +45,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Ajouter service</h5>
+                    <h5 class="modal-title" id="serviceModalTitle">Ajouter service</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -73,6 +75,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 
 </div>
 
@@ -156,16 +161,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     showToast("Service ajouté avec succès !");
                 }
 
-                // Fermer automatiquement le modal
                 serviceModal.hide();
-
-                // Reset formulaire
                 document.getElementById('serviceForm').reset();
                 document.getElementById('service_id').value = '';
                 modalTitle.textContent = "Ajouter service";
-
-                // Afficher le JSON pour debug
-                console.log({status:'success', service: s});
 
             } else {
                 showToast("Erreur lors de l'enregistrement !", 'danger');
