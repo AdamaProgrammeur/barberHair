@@ -6,12 +6,10 @@
 
     <h2 class="mb-4">Gestion des services</h2>
 
-    <!-- Bouton Ajouter -->
     <button id="addServiceBtn" type="button" class="btn btn-success mb-3">
         <i class="bi bi-plus-circle"></i> Ajouter un service
     </button>
 
-    <!-- Table des services -->
     <table class="table table-bordered" id="servicesTable">
         <thead>
             <tr>
@@ -24,11 +22,7 @@
         <tbody>
             {% for service in services %}
             <tr data-id="{{ service.id }}">
-                <td>
-                    {% if service.image %}
-                        <img src="{{ service.image.url }}" width="60">
-                    {% endif %}
-                </td>
+                <td>{% if service.image %}<img src="{{ service.image.url }}" width="60">{% endif %}</td>
                 <td>{{ service.nom }}</td>
                 <td>{{ service.prix }}</td>
                 <td>
@@ -76,47 +70,49 @@
         </div>
     </div>
 
-    <!-- Toast container -->
-    <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
-
+    <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index:9999;"></div>
 </div>
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
     const servicesTable = document.querySelector('#servicesTable tbody');
-    const serviceModalEl = document.getElementById('serviceModal');
-    const serviceModal = new bootstrap.Modal(serviceModalEl, {backdrop:'static'});
+    const serviceModal = new bootstrap.Modal(document.getElementById('serviceModal'), {backdrop:'static'});
     const saveBtn = document.getElementById('saveBtn');
     const addServiceBtn = document.getElementById('addServiceBtn');
     const modalTitle = document.getElementById('serviceModalTitle');
     const toastContainer = document.getElementById('toastContainer');
 
-    function getCSRF() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
+    const getCSRF = () => document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    function showToast(message, type='success') {
+    const showToast = (msg, type='success') => {
         const toastEl = document.createElement('div');
         toastEl.className = `toast align-items-center text-bg-${type} border-0`;
         toastEl.setAttribute('role','alert');
         toastEl.setAttribute('aria-live','assertive');
         toastEl.setAttribute('aria-atomic','true');
-        toastEl.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>`;
+        toastEl.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
         toastContainer.appendChild(toastEl);
         const bsToast = new bootstrap.Toast(toastEl, {delay:3000});
         bsToast.show();
-        bsToast._element.addEventListener('hidden.bs.toast', ()=>toastEl.remove());
-    }
+        bsToast._element.addEventListener('hidden.bs.toast', ()=> toastEl.remove());
+    };
 
-    // Ajouter / Modifier service
+    const renderRow = (s) => {
+        const imageHTML = s.image ? `<img src="${s.image}" width="60">` : '';
+        return `
+            <td>${imageHTML}</td>
+            <td>${s.nom}</td>
+            <td>${s.prix}</td>
+            <td>
+                <button class="btn btn-primary btn-sm editBtn" type="button"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn btn-danger btn-sm deleteBtn" type="button"><i class="bi bi-trash"></i></button>
+            </td>`;
+    };
+
     saveBtn.addEventListener('click', function() {
-        saveBtn.disabled = true; // Empêche double clic
+        saveBtn.disabled = true;
         const formData = new FormData();
         formData.append('service_id', document.getElementById('service_id').value);
         formData.append('nom', document.getElementById('nom').value);
@@ -125,35 +121,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if(image) formData.append('image', image);
         formData.append('csrfmiddlewaretoken', getCSRF());
 
-        fetch("", { method: 'POST', body: formData })
+        fetch("", { method:'POST', body:formData })
         .then(res => res.json())
         .then(res => {
             saveBtn.disabled = false;
             if(res.status === 'success'){
                 const s = res.service;
-                const imageHTML = s.image ? `<img src="${s.image}" width="60">` : '';
                 if(document.getElementById('service_id').value){ // modification
                     const row = servicesTable.querySelector(`tr[data-id="${s.id}"]`);
-                    row.innerHTML = `
-                        <td>${imageHTML}</td>
-                        <td>${s.nom}</td>
-                        <td>${s.prix}</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm editBtn" type="button"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-danger btn-sm deleteBtn" type="button"><i class="bi bi-trash"></i></button>
-                        </td>`;
+                    row.innerHTML = renderRow(s);
                     showToast("Service modifié avec succès !");
                 } else { // ajout
                     const row = document.createElement('tr');
                     row.setAttribute('data-id', s.id);
-                    row.innerHTML = `
-                        <td>${imageHTML}</td>
-                        <td>${s.nom}</td>
-                        <td>${s.prix}</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm editBtn" type="button"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-danger btn-sm deleteBtn" type="button"><i class="bi bi-trash"></i></button>
-                        </td>`;
+                    row.innerHTML = renderRow(s);
                     servicesTable.appendChild(row);
                     showToast("Service ajouté avec succès !");
                 }
@@ -173,7 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Ouvrir modal vide pour ajouter
     addServiceBtn.addEventListener('click', () => {
         document.getElementById('serviceForm').reset();
         document.getElementById('service_id').value = '';
@@ -181,10 +161,9 @@ document.addEventListener('DOMContentLoaded', function() {
         serviceModal.show();
     });
 
-    // Édition / Suppression
     servicesTable.addEventListener('click', function(e) {
+        const row = e.target.closest('tr');
         if(e.target.closest('.editBtn')){
-            const row = e.target.closest('tr');
             document.getElementById('service_id').value = row.dataset.id;
             document.getElementById('nom').value = row.children[1].textContent;
             document.getElementById('prix').value = row.children[2].textContent;
@@ -193,21 +172,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if(e.target.closest('.deleteBtn')){
-            const row = e.target.closest('tr');
             const id = row.dataset.id;
             if(confirm("Voulez-vous vraiment supprimer ce service ?")){
                 fetch("", {
-                    method: 'DELETE',
-                    headers: {'Content-Type': 'application/json','X-CSRFToken': getCSRF()},
-                    body: JSON.stringify({service_id: id})
+                    method:'DELETE',
+                    headers:{'Content-Type':'application/json','X-CSRFToken':getCSRF()},
+                    body: JSON.stringify({service_id:id})
                 })
-                .then(res => res.json())
-                .then(res => {
-                    if(res.status === 'deleted'){
+                .then(res=>res.json())
+                .then(res=>{
+                    if(res.status==='deleted'){
                         row.remove();
                         showToast("Service supprimé !");
                     } else {
-                        showToast("Erreur lors de la suppression !", 'danger');
+                        showToast("Erreur lors de la suppression !",'danger');
                     }
                 });
             }
