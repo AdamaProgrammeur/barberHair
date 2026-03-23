@@ -128,9 +128,15 @@ def services_crud(request):
     if request.method == "POST":
         service_id = request.POST.get("service_id")
         if service_id:
+            # Modification
             service = get_object_or_404(Service, id=service_id)
             form = ServiceForm(request.POST, request.FILES, instance=service)
         else:
+            # Ajout → vérifier doublon par nom (optionnel)
+            nom = request.POST.get("nom")
+            prix = request.POST.get("prix")
+            if Service.objects.filter(nom=nom, prix=prix).exists():
+                return JsonResponse({"status": "error", "message": "Ce service existe déjà."})
             form = ServiceForm(request.POST, request.FILES)
 
         if form.is_valid():
@@ -154,8 +160,6 @@ def services_crud(request):
         return JsonResponse({"status": "deleted", "service_id": service_id})
 
     return render(request, "services/services_crud.html", {"services": services})
-
-
 # ---------------------------------
 # FILE ATTENTE CRUD
 # ---------------------------------

@@ -7,7 +7,7 @@
     <h2 class="mb-4">Gestion des services</h2>
 
     <!-- Bouton Ajouter -->
-    <button id="addServiceBtn" class="btn btn-success mb-3">
+    <button id="addServiceBtn" type="button" class="btn btn-success mb-3">
         <i class="bi bi-plus-circle"></i> Ajouter un service
     </button>
 
@@ -32,8 +32,8 @@
                 <td>{{ service.nom }}</td>
                 <td>{{ service.prix }}</td>
                 <td>
-                    <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
-                    <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
+                    <button class="btn btn-primary btn-sm editBtn" type="button"><i class="bi bi-pencil-square"></i></button>
+                    <button class="btn btn-danger btn-sm deleteBtn" type="button"><i class="bi bi-trash"></i></button>
                 </td>
             </tr>
             {% endfor %}
@@ -69,8 +69,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button class="btn btn-success" id="saveBtn">Enregistrer</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Annuler</button>
+                    <button class="btn btn-success" id="saveBtn" type="button">Enregistrer</button>
                 </div>
             </div>
         </div>
@@ -93,11 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalTitle = document.getElementById('serviceModalTitle');
     const toastContainer = document.getElementById('toastContainer');
 
-    function getCSRF(){
+    function getCSRF() {
         return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
 
-    function showToast(message, type='success'){
+    function showToast(message, type='success') {
         const toastEl = document.createElement('div');
         toastEl.className = `toast align-items-center text-bg-${type} border-0`;
         toastEl.setAttribute('role','alert');
@@ -116,25 +116,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Ajouter / Modifier service
     saveBtn.addEventListener('click', function() {
+        saveBtn.disabled = true; // Empêche double clic
         const formData = new FormData();
         formData.append('service_id', document.getElementById('service_id').value);
         formData.append('nom', document.getElementById('nom').value);
         formData.append('prix', document.getElementById('prix').value);
-
         const image = document.getElementById('image').files[0];
-        if(image){
-            formData.append('image', image);
-        }
-
+        if(image) formData.append('image', image);
         formData.append('csrfmiddlewaretoken', getCSRF());
 
         fetch("", { method: 'POST', body: formData })
         .then(res => res.json())
         .then(res => {
+            saveBtn.disabled = false;
             if(res.status === 'success'){
                 const s = res.service;
                 const imageHTML = s.image ? `<img src="${s.image}" width="60">` : '';
-
                 if(document.getElementById('service_id').value){ // modification
                     const row = servicesTable.querySelector(`tr[data-id="${s.id}"]`);
                     row.innerHTML = `
@@ -142,8 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${s.nom}</td>
                         <td>${s.prix}</td>
                         <td>
-                            <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-primary btn-sm editBtn" type="button"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-danger btn-sm deleteBtn" type="button"><i class="bi bi-trash"></i></button>
                         </td>`;
                     showToast("Service modifié avec succès !");
                 } else { // ajout
@@ -154,22 +151,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${s.nom}</td>
                         <td>${s.prix}</td>
                         <td>
-                            <button class="btn btn-primary btn-sm editBtn"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-danger btn-sm deleteBtn"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-primary btn-sm editBtn" type="button"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-danger btn-sm deleteBtn" type="button"><i class="bi bi-trash"></i></button>
                         </td>`;
                     servicesTable.appendChild(row);
                     showToast("Service ajouté avec succès !");
                 }
-
                 serviceModal.hide();
                 document.getElementById('serviceForm').reset();
                 document.getElementById('service_id').value = '';
                 modalTitle.textContent = "Ajouter service";
-
             } else {
                 showToast("Erreur lors de l'enregistrement !", 'danger');
                 console.log(res);
             }
+        })
+        .catch(err => {
+            saveBtn.disabled = false;
+            showToast("Erreur réseau ou serveur !", 'danger');
+            console.error(err);
         });
     });
 
